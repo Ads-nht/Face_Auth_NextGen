@@ -16,6 +16,7 @@ AegisFace is a high-performance, secure, and lightweight face authentication sys
   * **Rigid Eye-Nose Alignment:** Landmarks are relative to the nose-tip, neutralizing 2D perspective shifts.
   * **Physiological Jitter Boundaries:** Imposes lower (`1.5e-5`) and upper (`8.0e-4`) variance thresholds to allow normal human micro-movement while blocking static photos and high-frequency shake bypasses.
 * **⚙️ Adaptive Exposure & Calibration:** Enrolls user faces with an auto-calibration loop scanning local lighting conditions for optimal crop factors, with optional CLAHE contrast equalization for low-light/night environments.
+* **📷 Dual Verification Modes:** Supports both real-time live video stream processing (webcam frames) and static image/photo file verification for developer testing and enrollment pipelines.
 
 ---
 

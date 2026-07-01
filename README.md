@@ -8,6 +8,7 @@ AegisFace is a high-performance, secure, and lightweight face authentication sys
 ## 🚀 Key Features
 
 * **⚡ Ultra-Low Latency:** Average face recognition loop runs in **9.6 ms** (daemon-side) using cached models and multi-threaded OpenCV DNN inferences (`cv::setNumThreads`).
+* **💾 Memory Footprint:** Consumes only **~204 MB** of resident physical RAM (RSS) when idle, keeping all ONNX models (YuNet, SFace, MiniFASNet) cached in memory for zero-startup-delay authentication.
 * **🔄 Daemon-Client Architecture:** Neural network models are kept resident in memory inside a system background service (`faceauth_daemon`), communicating with the client via a local UNIX socket (`/run/faceauth/faceauth.sock`). This avoids model-loading overhead and bypasses sandboxing limitations (e.g., SDDM Greeter home directory isolation).
 * **🔒 Pure C PAM Module:** The PAM client (`pam_faceauth.so`) is written in pure C. This removes the `libstdc++` runtime dependency during authentication, completely preventing the notorious `sudo` segmentation faults (`SIGSEGV`) during `dlclose()` calls.
 * **🛡️ Advanced Anti-Spoofing (Liveness & Attack Mitigation):**

@@ -1,0 +1,34 @@
+# CMake Build Directory
+/build/
+CMakeFiles/
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+*.so
+*.a
+*.la
+*.lo
+
+# Build Executables
+/faceauth_daemon
+/live_test
+/cli_benchmark
+/test_model
+
+# Obsolete / Huge dependencies (ONNX Runtime binaries are 480MB+, exceeding GitHub limits)
+/third_party/
+
+# User-specific face embeddings & personal data
+/models/authorized_face.yml
+/models/*.yml
+/users/*.yml
+
+# System & Editor configuration files
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+*.log
+*.bak
+*.local

@@ -10,13 +10,12 @@ AegisFace is a high-performance, secure, and lightweight face authentication sys
 * **⚡ Ultra-Low Latency:** Average face recognition loop runs in **9.6 ms** (daemon-side) using cached models and multi-threaded OpenCV DNN inferences (`cv::setNumThreads`).
 * **🔄 Daemon-Client Architecture:** Neural network models are kept resident in memory inside a system background service (`faceauth_daemon`), communicating with the client via a local UNIX socket (`/run/faceauth/faceauth.sock`). This avoids model-loading overhead and bypasses sandboxing limitations (e.g., SDDM Greeter home directory isolation).
 * **🔒 Pure C PAM Module:** The PAM client (`pam_faceauth.so`) is written in pure C. This removes the `libstdc++` runtime dependency during authentication, completely preventing the notorious `sudo` segmentation faults (`SIGSEGV`) during `dlclose()` calls.
-* **🛡️ Advanced Anti-Spoofing (Liveness Detection):**
-  * **Yapay Zeka (MiniFASNet ONNX):** Passive liveness detection checking if the face is real or a spoof print/screen without requiring user action.
-  * **Texture & Edge Analysis:** High-speed backup liveness method utilizing Laplacian Variance (to detect paper blur and digital screen Moire patterns) and HSV skin color saturation ranges.
+* **🛡️ Advanced Anti-Spoofing (Liveness & Attack Mitigation):**
+  * **Yapay Zeka (MiniFASNet ONNX):** Passive liveness detection that scans and blocks spoofing attempts from printed paper photos (still images) and video playbacks from smartphone/tablet screens.
+  * **Texture & Edge Analysis:** High-speed backup liveness method utilizing Laplacian Variance (to detect paper blur on printed photos and high-frequency Moire grids on digital screens) and HSV skin color saturation ranges.
   * **Rigid Eye-Nose Alignment:** Landmarks are relative to the nose-tip, neutralizing 2D perspective shifts.
   * **Physiological Jitter Boundaries:** Imposes lower (`1.5e-5`) and upper (`8.0e-4`) variance thresholds to allow normal human micro-movement while blocking static photos and high-frequency shake bypasses.
 * **⚙️ Adaptive Exposure & Calibration:** Enrolls user faces with an auto-calibration loop scanning local lighting conditions for optimal crop factors, with optional CLAHE contrast equalization for low-light/night environments.
-* **📷 Dual Verification Modes:** Supports both real-time live video stream processing (webcam frames) and static image/photo file verification for developer testing and enrollment pipelines.
 
 ---
 

@@ -1,7 +1,7 @@
 # 🛡️ AegisFace (FaceAuth NextGen)
 ### Next-Gen, Ultra-Fast (<10ms) Face Authentication PAM Module for Linux
 
-AegisFace is a high-performance, secure, and lightweight face authentication system designed as a C++ / Pure C replacement for legacy Python-based tools like Howdy. Built with a **Daemon-Client architecture** and optimized ONNX models via OpenCV DNN, it provides near-instantaneous authentication with advanced, multi-layered anti-spoofing technology.
+AegisFace is a high-performance, secure, and lightweight face authentication system designed as a C++ / Pure C replacement and spiritual successor to [Howdy](https://github.com/boltgolt/howdy). Built with a **Daemon-Client architecture** and optimized ONNX models via OpenCV DNN, it provides near-instantaneous authentication with advanced, multi-layered anti-spoofing technology.
 
 ---
 
@@ -132,3 +132,11 @@ enable_adaptive_exposure = true
 ## 📄 License
 
 This project is licensed under the MIT License.
+
+---
+
+## 💖 Acknowledgments & Inspiration
+
+AegisFace is heavily inspired by [Howdy](https://github.com/boltgolt/howdy), the popular Python-based face authentication system for Linux. 
+
+While AegisFace is a complete rewrite from scratch in C++ and C to resolve Howdy's startup latency, python dependency overhead, and dynamic linker crashes (`sudo` segfaults), it honors Howdy's original vision of bringing seamless, secure face unlock to the Linux ecosystem. Thank you to the original creators and contributors of Howdy!

@@ -80,7 +80,7 @@ fi
 echo -e "${GREEN}[OK] Tüm bağımlılıklar ve sistem gereksinimleri doğrulandı.${NC}"
 
 # 3. faceauth Kullanıcı Grubu Oluşturma
-echo -e "${BLUE}[1/8] Kullanıcı grubu oluşturuluyor...${NC}"
+echo -e "${BLUE}[1/9] Kullanıcı grubu oluşturuluyor...${NC}"
 if ! getent group faceauth >/dev/null; then
     groupadd faceauth
     echo -e "${GREEN}[OK] 'faceauth' grubu oluşturuldu.${NC}"
@@ -93,12 +93,12 @@ usermod -aG faceauth "$TARGET_USER"
 echo -e "${GREEN}[OK] '${TARGET_USER}' kullanıcısı 'faceauth' grubuna eklendi.${NC}"
 
 # 4. Sistem Dizinlerinin Oluşturulması
-echo -e "${BLUE}[2/8] Güvenli sistem dizinleri (/var/lib/faceauth) oluşturuluyor...${NC}"
+echo -e "${BLUE}[2/9] Güvenli sistem dizinleri (/var/lib/faceauth) oluşturuluyor...${NC}"
 mkdir -p /var/lib/faceauth/models
 mkdir -p /var/lib/faceauth/users
 
 # 5. Modellerin Kopyalanması
-echo -e "${BLUE}[3/8] Yapay Zeka modelleri kopyalanıyor...${NC}"
+echo -e "${BLUE}[3/9] Yapay Zeka modelleri kopyalanıyor...${NC}"
 LOCAL_MODELS_DIR="./models"
 
 if [ -d "$LOCAL_MODELS_DIR" ]; then
@@ -116,7 +116,7 @@ else
 fi
 
 # 6. Projenin Derlenmesi
-echo -e "${BLUE}[4/8] Proje derleniyor...${NC}"
+echo -e "${BLUE}[4/9] Proje derleniyor...${NC}"
 # Cmake çalıştırma (Kullanıcı haklarıyla çalıştırmak en iyisidir, ancak geçici olarak root ile derliyoruz)
 cmake -B build
 cmake --build build
@@ -128,7 +128,7 @@ fi
 echo -e "${GREEN}[OK] Derleme başarıyla tamamlandı.${NC}"
 
 # 7. Dosyaların Sisteme Kurulması (Install)
-echo -e "${BLUE}[5/8] İkilik dosyalar ve PAM modülü sisteme kuruluyor...${NC}"
+echo -e "${BLUE}[5/9] İkilik dosyalar ve PAM modülü sisteme kuruluyor...${NC}"
 
 # Daemon ve Canlı Test aracı
 cp build/faceauth_daemon /usr/local/bin/
@@ -153,7 +153,7 @@ chmod 644 /etc/faceauth.conf
 echo -e "  - Yeni yapılandırma dosyası başarıyla kuruldu (/etc/faceauth.conf)."
 
 # 8. Sahiplik ve İzinlerin Yapılandırılması (Güvenlik Sıkılaştırması)
-echo -e "${BLUE}[6/8] Dizin sahiplikleri ve izinleri yapılandırılıyor (Güvenlik Sıkılaştırması)...${NC}"
+echo -e "${BLUE}[6/9] Dizin sahiplikleri ve izinleri yapılandırılıyor (Güvenlik Sıkılaştırması)...${NC}"
 chown -R root:faceauth /var/lib/faceauth
 
 # Dizin izinleri (Sadece root ve faceauth grubu erişebilir)
@@ -173,7 +173,7 @@ fi
 echo -e "${GREEN}[OK] Güvenli izin yapılandırması tamamlandı.${NC}"
 
 # 9. Systemd Servis Dosyasının Dağıtılması
-echo -e "${BLUE}[7/8] Systemd servis dosyası kuruluyor...${NC}"
+echo -e "${BLUE}[7/9] Systemd servis dosyası kuruluyor...${NC}"
 
 cat <<EOF > /etc/systemd/system/faceauth.service
 [Unit]
@@ -200,8 +200,46 @@ chmod 644 /etc/systemd/system/faceauth.service
 systemctl daemon-reload
 echo -e "${GREEN}[OK] Systemd servisi başarıyla kuruldu.${NC}"
 
+# 9.5. Poka-Yoke: Otomatik Masaüstü ve PAM Entegrasyonu Yapılandırması
+echo -e "${BLUE}[8/9] Aktif masaüstü ortamları ve PAM hedefleri taranıyor...${NC}"
+
+configure_pam_file() {
+    local target_file="$1"
+    local friendly_name="$2"
+    
+    if [ -f "$target_file" ]; then
+        # Check if already configured
+        if grep -q "pam_faceauth.so" "$target_file"; then
+            echo -e "${YELLOW}  - [İPUCU] $friendly_name ($target_file) için AegisFace zaten aktif.${NC}"
+        else
+            # Backup
+            cp "$target_file" "${target_file}.bak"
+            
+            # Safe injection: Add sufficient rule at the top
+            if head -n 1 "$target_file" | grep -q "#%PAM-1.0"; then
+                sed -i '2i auth        sufficient  pam_faceauth.so' "$target_file"
+            else
+                sed -i '1i auth        sufficient  pam_faceauth.so' "$target_file"
+            fi
+            echo -e "${GREEN}  - [OK] $friendly_name ($target_file) için AegisFace otomatik aktif edildi (Yedek: ${target_file}.bak).${NC}"
+        fi
+    fi
+}
+
+configure_pam_file "/etc/pam.d/sudo" "Sudo Yetkilendirmesi"
+configure_pam_file "/etc/pam.d/hyprlock" "Hyprlock (Hyprland Ekran Kilidi)"
+configure_pam_file "/etc/pam.d/sddm" "SDDM (KDE Plasma Giriş Ekranı)"
+configure_pam_file "/etc/pam.d/gdm-password" "GDM (GNOME Giriş Ekranı)"
+configure_pam_file "/etc/pam.d/lightdm" "LightDM (Giriş Yöneticisi)"
+configure_pam_file "/etc/pam.d/kde" "KDE Kilit Ekranı"
+configure_pam_file "/etc/pam.d/kscreenlocker" "KDE Ekran Kilitleyici"
+configure_pam_file "/etc/pam.d/swaylock" "Swaylock (Sway WM Ekran Kilidi)"
+configure_pam_file "/etc/pam.d/i3lock" "i3lock (i3 WM Ekran Kilidi)"
+
+echo -e "${GREEN}[OK] PAM entegrasyon taraması ve otomatik kurulum tamamlandı.${NC}"
+
 # 10. Servisin Başlatılması
-echo -e "${BLUE}[8/8] Servis başlatılıyor ve aktif ediliyor...${NC}"
+echo -e "${BLUE}[9/9] Servis başlatılıyor ve aktif ediliyor...${NC}"
 systemctl enable faceauth.service
 systemctl restart faceauth.service
 

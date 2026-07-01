@@ -1,6 +1,8 @@
 # 🛡️ AegisFace (FaceAuth NextGen)
 ### Next-Gen, Ultra-Fast (<10ms) Face Authentication PAM Module for Linux
 
+[English](README.md) | [Türkçe](README_TR.md)
+
 AegisFace is a high-performance, secure, and lightweight face authentication system designed as a C++ / Pure C replacement and spiritual successor to [Howdy](https://github.com/boltgolt/howdy). Built with a **Daemon-Client architecture** and optimized ONNX models via OpenCV DNN, it provides near-instantaneous authentication with advanced, multi-layered anti-spoofing technology.
 
 ---

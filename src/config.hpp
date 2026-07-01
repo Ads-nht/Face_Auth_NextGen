@@ -21,6 +21,7 @@ struct FaceAuthConfig {
     // Environmental constraints
     double min_brightness = 35.0;
     bool enable_adaptive_exposure = true;
+    bool lazy_loading = false; // true: load/free models on-demand, false: load persistently in RAM
 
     // Active liveness thresholds
     double active_straight_min = 0.45;
@@ -93,6 +94,8 @@ inline FaceAuthConfig readFaceAuthConfig(const std::string& filepath = "/etc/fac
             try { config.active_turn_left = std::stod(val); } catch (...) {}
         } else if (key == "active_turn_right") {
             try { config.active_turn_right = std::stod(val); } catch (...) {}
+        } else if (key == "lazy_loading") {
+            config.lazy_loading = (val == "true" || val == "1");
         }
     }
 
@@ -104,6 +107,7 @@ inline FaceAuthConfig readFaceAuthConfig(const std::string& filepath = "/etc/fac
     std::cout << "  - MiniFASNet Eşiği     : " << config.minifas_threshold << std::endl;
     std::cout << "  - Minimum Parlaklık    : " << config.min_brightness << std::endl;
     std::cout << "  - Adaptif Pozlama (CLAHE): " << (config.enable_adaptive_exposure ? "ACIK" : "KAPALI") << std::endl;
+    std::cout << "  - Lazy Loading (RAM Tasarrufu): " << (config.lazy_loading ? "ACIK" : "KAPALI") << std::endl;
 
     return config;
 }

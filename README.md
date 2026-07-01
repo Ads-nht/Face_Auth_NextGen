@@ -7,9 +7,10 @@ AegisFace is a high-performance, secure, and lightweight face authentication sys
 
 ## 🚀 Key Features
 
-* **⚡ Ultra-Low Latency:** Average face recognition loop runs in **9.6 ms** (daemon-side) using cached models and multi-threaded OpenCV DNN inferences (`cv::setNumThreads`).
-* **💾 Memory Footprint:** Consumes only **~204 MB** of resident physical RAM (RSS) when idle, keeping all ONNX models (YuNet, SFace, MiniFASNet) cached in memory for zero-startup-delay authentication.
-* **🔄 Daemon-Client Architecture:** Neural network models are kept resident in memory inside a system background service (`faceauth_daemon`), communicating with the client via a local UNIX socket (`/run/faceauth/faceauth.sock`). This avoids model-loading overhead and bypasses sandboxing limitations (e.g., SDDM Greeter home directory isolation).
+* **⚡ Dual Operation Modes (Performance vs. RAM Saving):**
+  * **Persistent Mode (Default / Performance Priority):** Models are kept resident in memory. Latency is **<10ms** (average **9.6 ms**), RAM usage is **~204 MB** (RSS).
+  * **On-Demand Mode (Lazy Loading / RAM Saving):** Models are loaded from disk only when an auth request is received and immediately unloaded afterward. Idle RAM usage drops to **~20 MB**, adding a minor load latency of **~150–300 ms** (depending on SSD/HDD speed) during authentication.
+* **🔄 Daemon-Client Architecture:** The background service (`faceauth_daemon`) handles model caching and camera access, communicating with the client via a local UNIX socket (`/run/faceauth/faceauth.sock`). This avoids model-loading overhead and bypasses sandboxing limitations (e.g., SDDM Greeter home directory isolation).
 * **🔒 Pure C PAM Module:** The PAM client (`pam_faceauth.so`) is written in pure C. This removes the `libstdc++` runtime dependency during authentication, completely preventing the notorious `sudo` segmentation faults (`SIGSEGV`) during `dlclose()` calls.
 * **🛡️ Advanced Anti-Spoofing (Liveness & Attack Mitigation):**
   * **Yapay Zeka (MiniFASNet ONNX):** Passive liveness detection that scans and blocks spoofing attempts from printed paper photos (still images) and video playbacks from smartphone/tablet screens.
@@ -110,6 +111,8 @@ The behavior of the daemon can be tuned dynamically. Parameters are re-read on e
 liveness_method = minifas
 # Cosine similarity threshold for face verification (0.0 to 1.0)
 matching_threshold = 0.45
+# Enable Lazy Loading to save RAM (keeps RAM usage at ~20MB idle, adds 150-300ms delay during auth)
+lazy_loading = false
 
 [Texture]
 # Edge variance limits for photo/screen detection

@@ -191,6 +191,37 @@ string runAuthentication(const string& user_feature_file) {
     // Dynamic configuration reload
     FaceAuthConfig config = readFaceAuthConfig();
 
+    bool loaded_on_demand = false;
+    if (config.lazy_loading) {
+        auto load_start = chrono::high_resolution_clock::now();
+        cout << "[INFO] Istege bagli (lazy) model yuklemesi tetiklendi..." << endl;
+        string det_path = get_model_path("yunet.onnx");
+        string rec_path = get_model_path("sface.onnx");
+        string live_path = get_model_path("minifas.onnx");
+
+        detector = FaceDetectorYN::create(det_path, "", Size(320, 240), 0.6f, 0.3f, 5000);
+        recognizer = FaceRecognizerSF::create(rec_path, "");
+
+        if (detector.empty() || recognizer.empty()) {
+            cerr << "[HATA] Lazy loading: Modeller yuklenemedi!" << endl;
+            return "FAILURE";
+        }
+
+        if (file_exists(live_path)) {
+            try {
+                liveness_net = dnn::readNetFromONNX(live_path);
+                if (!liveness_net.empty()) {
+                    liveness_net.setPreferableBackend(dnn::DNN_BACKEND_OPENCV);
+                    liveness_net.setPreferableTarget(dnn::DNN_TARGET_CPU);
+                }
+            } catch (...) {}
+        }
+        loaded_on_demand = true;
+        auto load_end = chrono::high_resolution_clock::now();
+        double load_ms = chrono::duration_cast<chrono::microseconds>(load_end - load_start).count() / 1000.0;
+        cout << "[INFO] Modeller basariyla yuklendi (Sure: " << load_ms << " ms)." << endl;
+    }
+
     // Open Camera
     VideoCapture cap(0);
     if (!cap.isOpened()) {
@@ -428,6 +459,12 @@ string runAuthentication(const string& user_feature_file) {
     }
 
     cap.release();
+    if (loaded_on_demand) {
+        detector.release();
+        recognizer.release();
+        liveness_net = dnn::Net(); // Clears all layers and weights from RAM
+        cout << "[INFO] Modeller RAM'den temizlendi (Lazy Cleanup)." << endl;
+    }
     return auth_success ? "SUCCESS" : "FAILURE";
 }
 
@@ -440,31 +477,37 @@ int main() {
     cout << "==================================================" << endl;
     cout << "[INFO] Modeller yukleniyor..." << endl;
 
-    string det_path = get_model_path("yunet.onnx");
-    string rec_path = get_model_path("sface.onnx");
-    string live_path = get_model_path("minifas.onnx");
+    FaceAuthConfig config = readFaceAuthConfig();
+    if (!config.lazy_loading) {
+        cout << "[INFO] Modeller persistent bellege yukleniyor (Lazy Loading: KAPALI)..." << endl;
+        string det_path = get_model_path("yunet.onnx");
+        string rec_path = get_model_path("sface.onnx");
+        string live_path = get_model_path("minifas.onnx");
 
-    detector = FaceDetectorYN::create(det_path, "", Size(320, 240), 0.6f, 0.3f, 5000);
-    recognizer = FaceRecognizerSF::create(rec_path, "");
+        detector = FaceDetectorYN::create(det_path, "", Size(320, 240), 0.6f, 0.3f, 5000);
+        recognizer = FaceRecognizerSF::create(rec_path, "");
 
-    if (detector.empty() || recognizer.empty()) {
-        cerr << "[HATA] Dedektör veya yüz tanıma modeli yüklenemedi!" << endl;
-        return -1;
-    }
+        if (detector.empty() || recognizer.empty()) {
+            cerr << "[HATA] Dedektör veya yüz tanıma modeli yüklenemedi!" << endl;
+            return -1;
+        }
 
-    if (file_exists(live_path)) {
-        try {
-            liveness_net = dnn::readNetFromONNX(live_path);
-            if (!liveness_net.empty()) {
-                liveness_net.setPreferableBackend(dnn::DNN_BACKEND_OPENCV);
-                liveness_net.setPreferableTarget(dnn::DNN_TARGET_CPU);
-                cout << "[OK] MiniFASNet anti-spoofing yapay zeka modeli yuklendi." << endl;
+        if (file_exists(live_path)) {
+            try {
+                liveness_net = dnn::readNetFromONNX(live_path);
+                if (!liveness_net.empty()) {
+                    liveness_net.setPreferableBackend(dnn::DNN_BACKEND_OPENCV);
+                    liveness_net.setPreferableTarget(dnn::DNN_TARGET_CPU);
+                    cout << "[OK] MiniFASNet anti-spoofing yapay zeka modeli yuklendi." << endl;
+                }
+            } catch (...) {
+                cout << "[UYARI] MiniFASNet modeli yuklenemedi! Pasif yapay zeka canliligi aktif olmayacaktir." << endl;
             }
-        } catch (...) {
-            cout << "[UYARI] MiniFASNet modeli yuklenemedi! Pasif yapay zeka canliligi aktif olmayacaktir." << endl;
+        } else {
+            cout << "[UYARI] MiniFASNet model dosyasi bulunamadi!" << endl;
         }
     } else {
-        cout << "[UYARI] MiniFASNet model dosyasi bulunamadi!" << endl;
+        cout << "[INFO] Modeller istege bagli yuklenecek (Lazy Loading: ACIK)..." << endl;
     }
 
     // Dynamic CPU threading optimization (Phone-Like core control)

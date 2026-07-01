@@ -15,6 +15,7 @@ AegisFace is a high-performance, secure, and lightweight face authentication sys
   * **Texture & Edge Analysis:** High-speed backup liveness method utilizing Laplacian Variance (to detect paper blur on printed photos and high-frequency Moire grids on digital screens) and HSV skin color saturation ranges.
   * **Rigid Eye-Nose Alignment:** Landmarks are relative to the nose-tip, neutralizing 2D perspective shifts.
   * **Physiological Jitter Boundaries:** Imposes lower (`1.5e-5`) and upper (`8.0e-4`) variance thresholds to allow normal human micro-movement while blocking static photos and high-frequency shake bypasses.
+  * **Socket Privilege Verification (Poka-Yoke):** Verifies the client process's UID using Linux `SO_PEERCRED` on the UNIX socket. Rejects any authentication requests where the socket client is not root (UID 0), not a system display manager, and does not match the target user's UID. This prevents local privilege escalation via socket spoofing.
 * **⚙️ Adaptive Exposure & Calibration:** Enrolls user faces with an auto-calibration loop scanning local lighting conditions for optimal crop factors, with optional CLAHE contrast equalization for low-light/night environments.
 
 ---

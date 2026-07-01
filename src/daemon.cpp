@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <grp.h>
+#include <pwd.h>
 #include "config.hpp"
 
 using namespace std;
@@ -506,6 +507,15 @@ int main() {
         int client_fd = accept(server_fd, nullptr, nullptr);
         if (client_fd == -1) continue;
 
+        // Poka-Yoke Security Check: Get credentials of the connecting peer process
+        struct ucred cred;
+        socklen_t len = sizeof(cred);
+        if (getsockopt(client_fd, SOL_SOCKET, SO_PEERCRED, &cred, &len) == -1) {
+            cerr << "[SECURITY WARNING] Soket baglantisinda istemci kimligi okunamadi!" << endl;
+            close(client_fd);
+            continue;
+        }
+
         char buffer[256];
         memset(buffer, 0, sizeof(buffer));
         ssize_t bytes_read = read(client_fd, buffer, sizeof(buffer) - 1);
@@ -517,7 +527,30 @@ int main() {
                 username = payload.substr(13);
             }
             username = trim(username);
-            cout << "[DAEMON] Yetkilendirme istegi alindi. Kullanici: " << username << endl;
+
+            // Resolve target username to UID
+            struct passwd *pw = getpwnam(username.c_str());
+            if (!pw) {
+                cerr << "[SECURITY WARNING] Hedef kullanici bulunamadi: " << username << endl;
+                write(client_fd, "FAILURE", 7);
+                close(client_fd);
+                continue;
+            }
+            uid_t target_uid = pw->pw_uid;
+
+            // Security Validation (Poka-Yoke):
+            // Only allow if client UID matches target UID, or client is root (UID 0), 
+            // or client is a system user (UID < 1000, like sddm, lightdm)
+            if (cred.uid != 0 && cred.uid != target_uid && cred.uid >= 1000) {
+                cerr << "[SECURITY CRITICAL] Yetkisiz kimlik dogrulama istegi engellendi! "
+                     << "Sokete baglanan UID: " << cred.uid << " -> Hedef Kullanici: " << username 
+                     << " (UID " << target_uid << ")" << endl;
+                write(client_fd, "FAILURE", 7);
+                close(client_fd);
+                continue;
+            }
+
+            cout << "[DAEMON] Yetkilendirme istegi alindi (Güvenlik Kontrolü Gecildi). Kullanici: " << username << endl;
 
             string user_feature_file = "/var/lib/faceauth/users/" + username + ".yml";
             if (!file_exists(user_feature_file)) {

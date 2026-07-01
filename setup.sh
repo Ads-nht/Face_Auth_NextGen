@@ -36,6 +36,49 @@ fi
 
 echo -e "${GREEN}[OK] Kurulum yapılacak hedef kullanıcı: ${TARGET_USER}${NC}"
 
+# 2.5. Poka-Yoke: Ön-Kontroller ve Bağımlılık Denetimi (Pre-flight Checks)
+echo -e "${BLUE}[HAZIRLIK] Sistem gereksinimleri ve bağımlılıklar denetleniyor (Poka-Yoke)...${NC}"
+
+# CMake kontrolü
+if ! command -v cmake &> /dev/null; then
+    echo -e "${RED}[HATA] 'cmake' derleme aracı bulunamadı! Lütfen kurun.${NC}"
+    exit 1
+fi
+
+# G++ kontrolü
+if ! command -v g++ &> /dev/null; then
+    echo -e "${RED}[HATA] C++ derleyicisi 'g++' bulunamadı! Lütfen kurun.${NC}"
+    exit 1
+fi
+
+# Pkg-config kontrolü
+if ! command -v pkg-config &> /dev/null; then
+    echo -e "${RED}[HATA] 'pkg-config' aracı bulunamadı! Lütfen kurun.${NC}"
+    exit 1
+fi
+
+# OpenCV Kütüphane kontrolü
+if ! pkg-config --exists opencv4; then
+    echo -e "${RED}[HATA] OpenCV 4 geliştirici kütüphaneleri (opencv4) bulunamadı!${NC}"
+    echo -e "${YELLOW}İpucu: Debian/Ubuntu için 'libopencv-dev', Arch için 'opencv' kurmalısınız.${NC}"
+    exit 1
+fi
+
+# Linux PAM Geliştirici Kit kontrolü
+if [ ! -f /usr/include/security/pam_modules.h ]; then
+    echo -e "${RED}[HATA] Linux PAM geliştirici başlıkları (/usr/include/security/pam_modules.h) bulunamadı!${NC}"
+    echo -e "${YELLOW}İpucu: Debian/Ubuntu için 'libpam0g-dev', Arch için 'pam' kurmalısınız.${NC}"
+    exit 1
+fi
+
+# Kamera donanım kontrolü
+if ! ls /dev/video* &> /dev/null; then
+    echo -e "${YELLOW}[UYARI] Sistemde herhangi bir kamera aygıtı (/dev/video*) algılanamadı!${NC}"
+    echo -e "${YELLOW}Yüz tanıma özelliğinin çalışabilmesi için sisteme bir kamera bağlı olmalıdır.${NC}"
+fi
+
+echo -e "${GREEN}[OK] Tüm bağımlılıklar ve sistem gereksinimleri doğrulandı.${NC}"
+
 # 3. faceauth Kullanıcı Grubu Oluşturma
 echo -e "${BLUE}[1/8] Kullanıcı grubu oluşturuluyor...${NC}"
 if ! getent group faceauth >/dev/null; then

@@ -23,17 +23,17 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
     // 1. Get target username from PAM context
     const char *username = NULL;
     if (pam_get_user(pamh, &username, NULL) != PAM_SUCCESS || !username) {
-        pam_syslog(pamh, LOG_ERR, "Kullanici adi alinamadi!");
+        pam_syslog(pamh, LOG_ERR, "Failed to retrieve username!");
         return PAM_AUTH_ERR;
     }
 
     // 2. Prompt message
-    pam_info(pamh, "[FaceAuth] Yuz tarayici baslatiliyor, lütfen kameraya bakin...");
+    pam_info(pamh, "[FaceAuth] Starting face scanner, please look at the camera...");
 
     // 3. Create socket
     int client_fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (client_fd == -1) {
-        pam_syslog(pamh, LOG_ERR, "Soket olusturulamadi!");
+        pam_syslog(pamh, LOG_ERR, "Failed to create socket!");
         return PAM_AUTH_ERR;
     }
 
@@ -45,7 +45,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
     // 4. Connect to the Daemon socket
     if (connect(client_fd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
         // If Daemon is sleeping or not running, fallback gracefully immediately
-        pam_info(pamh, "[FaceAuth] Servis aktif degil. Standart sifre girisine yonlendiriliyorsunuz...");
+        pam_info(pamh, "[FaceAuth] Service is not active. Redirecting to password authentication...");
         close(client_fd);
         return PAM_AUTH_ERR;
     }
@@ -54,7 +54,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
     char request[256];
     snprintf(request, sizeof(request), "AUTH_REQUEST:%s", username);
     if (send(client_fd, request, strlen(request), 0) == -1) {
-        pam_syslog(pamh, LOG_ERR, "Istek gonderilemedi!");
+        pam_syslog(pamh, LOG_ERR, "Failed to send authorization request!");
         close(client_fd);
         return PAM_AUTH_ERR;
     }
@@ -78,7 +78,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
             if (wait_for_enter) {
                 char *resp = NULL;
                 // Wait for the user to press Enter before completing authentication
-                int rc = pam_prompt(pamh, PAM_PROMPT_ECHO_ON, &resp, "[FaceAuth] Yuz onaylandi. Giris yapmak icin ENTER'a basin: ");
+                int rc = pam_prompt(pamh, PAM_PROMPT_ECHO_ON, &resp, "[FaceAuth] Face verified. Press ENTER to authenticate: ");
                 if (resp) {
                     free(resp); // Free response allocated by pam_prompt to prevent memory leak
                 }
@@ -86,10 +86,10 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
                     return PAM_AUTH_ERR;
                 }
             }
-            pam_info(pamh, "[FaceAuth] Kimlik dogrulama basarili! Kilit acildi.");
+            pam_info(pamh, "[FaceAuth] Authentication successful! Access granted.");
             return PAM_SUCCESS;
         } else {
-            pam_info(pamh, "[FaceAuth] Kimlik dogrulanamadi veya fotograf algilandi.");
+            pam_info(pamh, "[FaceAuth] Authentication failed or spoof attempt detected.");
             return PAM_AUTH_ERR;
         }
     }

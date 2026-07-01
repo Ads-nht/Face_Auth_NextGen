@@ -13,32 +13,32 @@ int main() {
     string rec_model_path = "models/sface.onnx";
 
     cout << "\n========================================================" << endl;
-    cout << "   FaceAuth NextGen - Terminal Benchmark (CLI) v1.0   " << endl;
+    cout << "   AegisFace - Terminal Benchmark (CLI) v1.0          " << endl;
     cout << "========================================================" << endl;
-    cout << "[INFO] Modeller yukleniyor..." << endl;
+    cout << "[INFO] Loading models..." << endl;
 
     Ptr<FaceDetectorYN> detector = FaceDetectorYN::create(det_model_path, "", Size(320, 240), 0.6f, 0.3f, 5000);
     Ptr<FaceRecognizerSF> recognizer = FaceRecognizerSF::create(rec_model_path, "");
 
     if (detector.empty() || recognizer.empty()) {
-        cerr << "[HATA] Modeller yuklenemedi! Dosya yollari dogru mu?" << endl;
+        cerr << "[ERROR] Failed to load models! Are the file paths correct?" << endl;
         return -1;
     }
-    cout << "[OK] Modeller basariyla yuklendi." << endl;
+    cout << "[OK] Models successfully loaded." << endl;
 
-    cout << "[INFO] Web kamerasi aciliyor (ID: 0)..." << endl;
+    cout << "[INFO] Opening webcam (ID: 0)..." << endl;
     VideoCapture cap(0);
     if (!cap.isOpened()) {
-        cerr << "[HATA] Web kamerasi acilamadi! Lutfen baglantiyi kontrol edin." << endl;
+        cerr << "[ERROR] Failed to open webcam! Please check the connection." << endl;
         return -1;
     }
-    cout << "[OK] Kamera acildi. 30 frame uzerinde benchmark testi basliyor...\n" << endl;
+    cout << "[OK] Camera opened. Starting benchmark over 30 frames...\n" << endl;
 
     // Warm-up
     Mat dummy = Mat::zeros(240, 320, CV_8UC3);
     Mat dummy_faces;
     detector->detect(dummy, dummy_faces);
-    cout << "[INFO] Model warm-up tamamlandi. Test basliyor...\n" << endl;
+    cout << "[INFO] Model warm-up completed. Starting benchmark test...\n" << endl;
 
     vector<double> det_times;
     vector<double> align_times;
@@ -50,7 +50,7 @@ int main() {
         Mat frame;
         cap >> frame;
         if (frame.empty()) {
-            cerr << "[UYARI] Frame bos alindi! Geciliyor..." << endl;
+            cerr << "[WARNING] Received empty frame! Skipping..." << endl;
             continue;
         }
 
@@ -96,8 +96,8 @@ int main() {
         }
         total_times.push_back(total_t);
 
-        cout << format("Frame %2d/30 | Yuz Tespit: %s | Det: %5.1f ms | Align: %5.1f ms | Rec: %5.1f ms | Toplam: %5.1f ms",
-                       frame_idx, (faces.rows > 0 ? "EVET" : "HAYIR"), det_t, align_t, rec_t, total_t) << endl;
+        cout << format("Frame %2d/30 | Face Detect: %s | Det: %5.1f ms | Align: %5.1f ms | Rec: %5.1f ms | Total: %5.1f ms",
+                       frame_idx, (faces.rows > 0 ? "YES" : "NO"), det_t, align_t, rec_t, total_t) << endl;
     }
 
     cap.release();
@@ -124,20 +124,20 @@ int main() {
     calc_stats(total_times, min_total, max_total, avg_total);
 
     cout << "\n========================================================" << endl;
-    cout << "             BENCHMARK SONUCLARI (STATS)                " << endl;
+    cout << "             BENCHMARK RESULTS (STATS)                  " << endl;
     cout << "========================================================" << endl;
-    cout << format("Toplam Frame Sayisi   : 30") << endl;
-    cout << format("Yuz Tespit Edilen     : %d frame", faces_detected_count) << endl;
+    cout << format("Total Frames Processed: 30") << endl;
+    cout << format("Faces Detected        : %d frames", faces_detected_count) << endl;
     cout << "--------------------------------------------------------" << endl;
-    cout << " Islem Adimi        |  Minimum  |  Maksimum |  Ortalama " << endl;
+    cout << " Process Step       |  Minimum  |  Maximum  |  Average  " << endl;
     cout << "--------------------|-----------|-----------|-----------" << endl;
-    cout << format(" Yuz Tespit (Det)   | %5.1f ms  | %5.1f ms  | %5.1f ms", min_det, max_det, avg_det) << endl;
-    cout << format(" Hizalama (Align)   | %5.1f ms  | %5.1f ms  | %5.1f ms", min_align, max_align, avg_align) << endl;
-    cout << format(" Tanima (Rec)       | %5.1f ms  | %5.1f ms  | %5.1f ms", min_rec, max_rec, avg_rec) << endl;
+    cout << format(" Face Detect (Det)  | %5.1f ms  | %5.1f ms  | %5.1f ms", min_det, max_det, avg_det) << endl;
+    cout << format(" Alignment (Align)  | %5.1f ms  | %5.1f ms  | %5.1f ms", min_align, max_align, avg_align) << endl;
+    cout << format(" Recognition (Rec)  | %5.1f ms  | %5.1f ms  | %5.1f ms", min_rec, max_rec, avg_rec) << endl;
     cout << "--------------------|-----------|-----------|-----------" << endl;
-    cout << format(" TOPLAM SURE        | %5.1f ms  | %5.1f ms  | %5.1f ms", min_total, max_total, avg_total) << endl;
+    cout << format(" TOTAL DURATION     | %5.1f ms  | %5.1f ms  | %5.1f ms", min_total, max_total, avg_total) << endl;
     cout << "========================================================" << endl;
-    cout << "[INFO] Prototip C++ testi tamamlandi." << endl;
+    cout << "[INFO] Prototype C++ benchmark test completed." << endl;
 
     return 0;
 }

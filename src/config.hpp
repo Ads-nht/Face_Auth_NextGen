@@ -47,7 +47,7 @@ inline FaceAuthConfig readFaceAuthConfig(const std::string& filepath = "/etc/fac
     if (!file.is_open()) {
         file.open("faceauth.conf");
         if (!file.is_open()) {
-            std::cout << "[CONFIG] Yapilandirma dosyasi bulunamadi (" << filepath << "). Varsayilanlar yukleniyor." << std::endl;
+            std::cout << "[CONFIG] Configuration file not found (" << filepath << "). Loading defaults." << std::endl;
             return config;
         }
     }
@@ -99,15 +99,15 @@ inline FaceAuthConfig readFaceAuthConfig(const std::string& filepath = "/etc/fac
         }
     }
 
-    std::cout << "[CONFIG] Yapilandirma yuklendi:" << std::endl;
-    std::cout << "  - Liveness Metodu      : " << config.liveness_method << std::endl;
-    std::cout << "  - Eşleşme Eşiği        : " << config.matching_threshold << std::endl;
-    std::cout << "  - Doku Min/Max Lap     : " << config.texture_min_laplacian << " / " << config.texture_max_laplacian << std::endl;
-    std::cout << "  - Doku Min/Max Sat     : " << config.texture_min_hsv_sat << " / " << config.texture_max_hsv_sat << std::endl;
-    std::cout << "  - MiniFASNet Eşiği     : " << config.minifas_threshold << std::endl;
-    std::cout << "  - Minimum Parlaklık    : " << config.min_brightness << std::endl;
-    std::cout << "  - Adaptif Pozlama (CLAHE): " << (config.enable_adaptive_exposure ? "ACIK" : "KAPALI") << std::endl;
-    std::cout << "  - Lazy Loading (RAM Tasarrufu): " << (config.lazy_loading ? "ACIK" : "KAPALI") << std::endl;
+    std::cout << "[CONFIG] Configuration loaded:" << std::endl;
+    std::cout << "  - Liveness Method      : " << config.liveness_method << std::endl;
+    std::cout << "  - Matching Threshold   : " << config.matching_threshold << std::endl;
+    std::cout << "  - Texture Min/Max Lap  : " << config.texture_min_laplacian << " / " << config.texture_max_laplacian << std::endl;
+    std::cout << "  - Texture Min/Max Sat  : " << config.texture_min_hsv_sat << " / " << config.texture_max_hsv_sat << std::endl;
+    std::cout << "  - MiniFASNet Threshold : " << config.minifas_threshold << std::endl;
+    std::cout << "  - Minimum Brightness   : " << config.min_brightness << std::endl;
+    std::cout << "  - Adaptive Exp (CLAHE) : " << (config.enable_adaptive_exposure ? "ON" : "OFF") << std::endl;
+    std::cout << "  - Lazy Loading (RAM)   : " << (config.lazy_loading ? "ON" : "OFF") << std::endl;
 
     return config;
 }

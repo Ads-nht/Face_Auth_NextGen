@@ -41,7 +41,7 @@ string get_model_path(const string& filename) {
 
 // Graceful Shutdown
 void handleSignal(int sig) {
-    cout << "\n[INFO] Daemon kapatiliyor... (Sinyal: " << sig << ")" << endl;
+    cout << "\n[INFO] Shutting down daemon... (Signal: " << sig << ")" << endl;
     if (server_fd != -1) {
         close(server_fd);
     }
@@ -194,7 +194,7 @@ string runAuthentication(const string& user_feature_file) {
     bool loaded_on_demand = false;
     if (config.lazy_loading) {
         auto load_start = chrono::high_resolution_clock::now();
-        cout << "[INFO] Istege bagli (lazy) model yuklemesi tetiklendi..." << endl;
+        cout << "[INFO] On-demand (lazy) model load triggered..." << endl;
         string det_path = get_model_path("yunet.onnx");
         string rec_path = get_model_path("sface.onnx");
         string live_path = get_model_path("minifas.onnx");
@@ -203,7 +203,7 @@ string runAuthentication(const string& user_feature_file) {
         recognizer = FaceRecognizerSF::create(rec_path, "");
 
         if (detector.empty() || recognizer.empty()) {
-            cerr << "[HATA] Lazy loading: Modeller yuklenemedi!" << endl;
+            cerr << "[ERROR] Lazy loading: Failed to load models!" << endl;
             return "FAILURE";
         }
 
@@ -219,13 +219,13 @@ string runAuthentication(const string& user_feature_file) {
         loaded_on_demand = true;
         auto load_end = chrono::high_resolution_clock::now();
         double load_ms = chrono::duration_cast<chrono::microseconds>(load_end - load_start).count() / 1000.0;
-        cout << "[INFO] Modeller basariyla yuklendi (Sure: " << load_ms << " ms)." << endl;
+        cout << "[INFO] Models successfully loaded (Time: " << load_ms << " ms)." << endl;
     }
 
     // Open Camera
     VideoCapture cap(0);
     if (!cap.isOpened()) {
-        cout << "[HATA] Web kamerasi acilamadi!" << endl;
+        cout << "[ERROR] Failed to open webcam!" << endl;
         return "FAILURE";
     }
 
@@ -240,14 +240,14 @@ string runAuthentication(const string& user_feature_file) {
     Mat frame;
     bool auth_success = false;
 
-    cout << "[INFO] Pasif Phone-ID taramasi baslatildi (Zaman Asimi: " << TIMEOUT_SEC << " sn)..." << endl;
+    cout << "[INFO] Passive FaceID scan started (Timeout: " << TIMEOUT_SEC << "s)..." << endl;
 
     while (true) {
         // 1. Timeout Check
         auto current_time = chrono::high_resolution_clock::now();
         double elapsed_sec = chrono::duration_cast<chrono::microseconds>(current_time - start_auth_time).count() / 1000000.0;
         if (elapsed_sec >= TIMEOUT_SEC) {
-            cout << "[UYARI] Zaman asimi! Pasif kimlik dogrulanamadi." << endl;
+            cout << "[WARNING] Timeout! Passive identity could not be verified." << endl;
             break;
         }
 
@@ -373,10 +373,10 @@ string runAuthentication(const string& user_feature_file) {
                 }
 
                 if (!is_live) {
-                    liveness_reason = "Yapay Zeka Canlilik Analizi Bekleniyor (Diff: " + to_string(logit_diff) + ", Var: " + to_string(landmark_variance) + ")";
+                    liveness_reason = "AI Liveness Analysis Pending (Diff: " + to_string(logit_diff) + ", Var: " + to_string(landmark_variance) + ")";
                 }
 
-                cout << "[LIVENESS] Yapay Zeka Pasif | Diff: " << logit_diff << " | Var: " << landmark_variance << " | Canli mi: " << (is_live ? "EVET" : "BEKLEMEDE") << endl;
+                cout << "[LIVENESS] AI Passive | Diff: " << logit_diff << " | Var: " << landmark_variance << " | Is Live: " << (is_live ? "YES" : "PENDING") << endl;
 
             } else if (config.liveness_method == "texture") {
                 Mat laplacian;
@@ -394,16 +394,16 @@ string runAuthentication(const string& user_feature_file) {
 
                 if (laplacian_var < config.texture_min_laplacian && hsv_sat_mean < config.texture_min_hsv_sat) {
                     is_live = false;
-                    liveness_reason = "Bloke: Kagit Fotograf / Dusuk Renk Doygunlugu";
+                    liveness_reason = "Blocked: Printed Photo / Low Color Saturation";
                 } else if (laplacian_var > config.texture_max_laplacian) {
                     is_live = false;
-                    liveness_reason = "Bloke: Dijital Ekran / Moire Deseni";
+                    liveness_reason = "Blocked: Digital Screen / Moire Pattern";
                 } else if (hsv_sat_mean > config.texture_max_hsv_sat) {
                     is_live = false;
-                    liveness_reason = "Bloke: Yapay Ekran Işıltısı";
+                    liveness_reason = "Blocked: Artificial Screen Glow";
                 }
 
-                cout << "[LIVENESS] Doku Pasif | Lap Var: " << laplacian_var << " | Sat: " << hsv_sat_mean << " | Canli: " << (is_live ? "EVET" : "HAYIR") << endl;
+                cout << "[LIVENESS] Texture Passive | Lap Var: " << laplacian_var << " | Sat: " << hsv_sat_mean << " | Is Live: " << (is_live ? "YES" : "NO") << endl;
             }
 
             // 5. Face Recognition comparison (only runs if liveness is verified)
@@ -416,33 +416,33 @@ string runAuthentication(const string& user_feature_file) {
 
                 double score_straight = recognizer->match(straight_feat, face_feature, FaceRecognizerSF::DisType::FR_COSINE);
                 double max_score = score_straight;
-                string matched_angle = "DUZ";
+                string matched_angle = "STRAIGHT";
 
                 if (is_multi_angle) {
                     double score_left = recognizer->match(left_feat, face_feature, FaceRecognizerSF::DisType::FR_COSINE);
                     double score_right = recognizer->match(right_feat, face_feature, FaceRecognizerSF::DisType::FR_COSINE);
                     if (score_left > max_score) {
                         max_score = score_left;
-                        matched_angle = "SOL";
+                        matched_angle = "LEFT";
                     }
                     if (score_right > max_score) {
                         max_score = score_right;
-                        matched_angle = "SAG";
+                        matched_angle = "RIGHT";
                     }
                 }
 
                 bool is_match = (max_score >= config.matching_threshold);
 
                 if (is_match) {
-                    cout << "[OK] Eslesme Basarili! Aci: " << matched_angle << " | Benzerlik Puanı: " << max_score << endl;
+                    cout << "[OK] Match Successful! Angle: " << matched_angle << " | Similarity Score: " << max_score << endl;
                     auth_success = true;
                     break;
                 } else {
-                    cout << "[BILGI] Yuz algilandi ama eslesmedi. En iyi benzerlik: " << max_score << endl;
+                    cout << "[INFO] Face detected but no match. Best similarity: " << max_score << endl;
                 }
             } else {
                 if (!liveness_reason.empty()) {
-                    cout << "[UYARI] Pasif canlilik engeli: " << liveness_reason << endl;
+                    cout << "[WARNING] Passive liveness blocker: " << liveness_reason << endl;
                 }
             }
         } else {
@@ -463,7 +463,7 @@ string runAuthentication(const string& user_feature_file) {
         detector.release();
         recognizer.release();
         liveness_net = dnn::Net(); // Clears all layers and weights from RAM
-        cout << "[INFO] Modeller RAM'den temizlendi (Lazy Cleanup)." << endl;
+        cout << "[INFO] Models cleared from RAM (Lazy Cleanup)." << endl;
     }
     return auth_success ? "SUCCESS" : "FAILURE";
 }
@@ -473,13 +473,13 @@ int main() {
     signal(SIGTERM, handleSignal);
 
     cout << "==================================================" << endl;
-    cout << "  FaceAuth NextGen - Sıfırdan Pasif FaceID Servisi " << endl;
+    cout << "  AegisFace - Passive FaceID Background Daemon    " << endl;
     cout << "==================================================" << endl;
-    cout << "[INFO] Modeller yukleniyor..." << endl;
+    cout << "[INFO] Loading models..." << endl;
 
     FaceAuthConfig config = readFaceAuthConfig();
     if (!config.lazy_loading) {
-        cout << "[INFO] Modeller persistent bellege yukleniyor (Lazy Loading: KAPALI)..." << endl;
+        cout << "[INFO] Loading models to persistent memory (Lazy Loading: OFF)..." << endl;
         string det_path = get_model_path("yunet.onnx");
         string rec_path = get_model_path("sface.onnx");
         string live_path = get_model_path("minifas.onnx");
@@ -488,7 +488,7 @@ int main() {
         recognizer = FaceRecognizerSF::create(rec_path, "");
 
         if (detector.empty() || recognizer.empty()) {
-            cerr << "[HATA] Dedektör veya yüz tanıma modeli yüklenemedi!" << endl;
+            cerr << "[ERROR] Failed to load face detector or recognition model!" << endl;
             return -1;
         }
 
@@ -498,28 +498,28 @@ int main() {
                 if (!liveness_net.empty()) {
                     liveness_net.setPreferableBackend(dnn::DNN_BACKEND_OPENCV);
                     liveness_net.setPreferableTarget(dnn::DNN_TARGET_CPU);
-                    cout << "[OK] MiniFASNet anti-spoofing yapay zeka modeli yuklendi." << endl;
+                    cout << "[OK] MiniFASNet anti-spoofing AI model loaded." << endl;
                 }
             } catch (...) {
-                cout << "[UYARI] MiniFASNet modeli yuklenemedi! Pasif yapay zeka canliligi aktif olmayacaktir." << endl;
+                cout << "[WARNING] Failed to load MiniFASNet! Passive AI liveness will be inactive." << endl;
             }
         } else {
-            cout << "[UYARI] MiniFASNet model dosyasi bulunamadi!" << endl;
+            cout << "[WARNING] MiniFASNet model file not found!" << endl;
         }
     } else {
-        cout << "[INFO] Modeller istege bagli yuklenecek (Lazy Loading: ACIK)..." << endl;
+        cout << "[INFO] Models will be loaded on demand (Lazy Loading: ON)..." << endl;
     }
 
     // Dynamic CPU threading optimization (Phone-Like core control)
     int cpu_cores = cv::getNumberOfCPUs();
     int optimal_threads = max(1, min(4, cpu_cores / 2));
     setNumThreads(optimal_threads);
-    cout << "[OK] CPU Is Parcacigi Limiti: " << optimal_threads << " / " << cpu_cores << endl;
+    cout << "[OK] CPU Thread Limit: " << optimal_threads << " / " << cpu_cores << endl;
 
     // Set up UNIX socket for PAM
     server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (server_fd == -1) {
-        cerr << "[HATA] Soket olusturulamadi!" << endl;
+        cerr << "[ERROR] Failed to create socket!" << endl;
         return -1;
     }
 
@@ -531,7 +531,7 @@ int main() {
     unlink(SOCKET_PATH.c_str());
 
     if (bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
-        cerr << "[HATA] Soket baglanamadi (bind)!" << endl;
+        cerr << "[ERROR] Failed to bind socket!" << endl;
         return -1;
     }
 
@@ -540,11 +540,11 @@ int main() {
     chown(SOCKET_PATH.c_str(), 0, getgrnam("faceauth") ? getgrnam("faceauth")->gr_gid : 0);
 
     if (listen(server_fd, 5) == -1) {
-        cerr << "[HATA] Dinleme baslatilamadi!" << endl;
+        cerr << "[ERROR] Failed to start listening!" << endl;
         return -1;
     }
 
-    cout << "[OK] FaceAuth servisi hazir. UNIX soket dinleniyor..." << endl;
+    cout << "[OK] AegisFace service ready. Listening on UNIX socket..." << endl;
 
     while (true) {
         int client_fd = accept(server_fd, nullptr, nullptr);
@@ -554,7 +554,7 @@ int main() {
         struct ucred cred;
         socklen_t len = sizeof(cred);
         if (getsockopt(client_fd, SOL_SOCKET, SO_PEERCRED, &cred, &len) == -1) {
-            cerr << "[SECURITY WARNING] Soket baglantisinda istemci kimligi okunamadi!" << endl;
+            cerr << "[SECURITY WARNING] Failed to retrieve client credentials from socket!" << endl;
             close(client_fd);
             continue;
         }
@@ -574,7 +574,7 @@ int main() {
             // Resolve target username to UID
             struct passwd *pw = getpwnam(username.c_str());
             if (!pw) {
-                cerr << "[SECURITY WARNING] Hedef kullanici bulunamadi: " << username << endl;
+                cerr << "[SECURITY WARNING] Target user not found: " << username << endl;
                 write(client_fd, "FAILURE", 7);
                 close(client_fd);
                 continue;
@@ -585,15 +585,15 @@ int main() {
             // Only allow if client UID matches target UID, or client is root (UID 0), 
             // or client is a system user (UID < 1000, like sddm, lightdm)
             if (cred.uid != 0 && cred.uid != target_uid && cred.uid >= 1000) {
-                cerr << "[SECURITY CRITICAL] Yetkisiz kimlik dogrulama istegi engellendi! "
-                     << "Sokete baglanan UID: " << cred.uid << " -> Hedef Kullanici: " << username 
+                cerr << "[SECURITY CRITICAL] Unauthorized authentication request blocked! "
+                     << "Client UID: " << cred.uid << " -> Target User: " << username 
                      << " (UID " << target_uid << ")" << endl;
                 write(client_fd, "FAILURE", 7);
                 close(client_fd);
                 continue;
             }
 
-            cout << "[DAEMON] Yetkilendirme istegi alindi (Güvenlik Kontrolü Gecildi). Kullanici: " << username << endl;
+            cout << "[DAEMON] Authentication request received (Security Check Passed). User: " << username << endl;
 
             string user_feature_file = "/var/lib/faceauth/users/" + username + ".yml";
             if (!file_exists(user_feature_file)) {
@@ -601,7 +601,7 @@ int main() {
             }
 
             string result = runAuthentication(user_feature_file);
-            cout << "[DAEMON] Yetkilendirme sonucu: " << result << endl;
+            cout << "[DAEMON] Authentication result: " << result << endl;
 
             write(client_fd, result.c_str(), result.length());
         }

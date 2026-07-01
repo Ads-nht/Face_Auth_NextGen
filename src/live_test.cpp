@@ -299,22 +299,22 @@ void drawFace(Mat& frame, const Mat& faces, double inference_time_ms, bool is_li
         
         if (i > 0) {
             box_color = Scalar(150, 150, 150); // Gray for secondary/ignored faces
-            liveness_str = "DIGER YUZ (YOK SAYILIYOR)";
+            liveness_str = "SECONDARY FACE (IGNORED)";
         } else if (liveness_method == "active" && !is_live) {
             box_color = Scalar(0, 165, 255); // Orange (Straight)
             if (active_state == 1) box_color = Scalar(255, 0, 255); // Pink/Purple (Blink)
             else if (active_state == 2) box_color = Scalar(0, 255, 255); // Cyan (Turn)
             
-            liveness_str = "CANLILIK ANALIZI YAPILIYOR...";
+            liveness_str = "ANALYZING LIVENESS...";
         } else if (!is_live) {
             box_color = Scalar(0, 0, 255); // RED for spoof / photo
-            liveness_str = "FOTOGRAF TESPIT EDILDI (SPOOF)";
+            liveness_str = "PHOTO DETECTED (SPOOF)";
         } else if (has_registered) {
             box_color = is_match ? Scalar(0, 255, 0) : Scalar(0, 165, 255); // GREEN for match, ORANGE for no match
-            liveness_str = "CANLI (REAL)";
+            liveness_str = "LIVE (REAL)";
         } else {
             box_color = Scalar(255, 255, 255); // WHITE for default real face
-            liveness_str = "CANLI (REAL)";
+            liveness_str = "LIVE (REAL)";
         }
         
         rectangle(frame, face_rect, box_color, 2);
@@ -323,14 +323,14 @@ void drawFace(Mat& frame, const Mat& faces, double inference_time_ms, bool is_li
         putText(frame, liveness_str, Point(x1, y1 - 25), FONT_HERSHEY_SIMPLEX, 0.5, box_color, 1.5);
 
         // Details (inference & brightness)
-        string details_str = format("Det: %.1f ms | Parlaklik: %.0f", inference_time_ms, brightness);
+        string details_str = format("Det: %.1f ms | Brightness: %.0f", inference_time_ms, brightness);
         putText(frame, details_str, Point(x1, y1 - 8), FONT_HERSHEY_SIMPLEX, 0.45, Scalar(200, 200, 200), 1);
 
         // Ambient Light Warning
         if (brightness < 45.0) {
-            putText(frame, "[!] ORTAM COK KARANLIK - ISIGI ACIN", Point(x1, y1 + h + 20), FONT_HERSHEY_SIMPLEX, 0.45, Scalar(0, 165, 255), 1.5);
+            putText(frame, "[!] ENVIRONMENT TOO DARK - TURN ON LIGHT", Point(x1, y1 + h + 20), FONT_HERSHEY_SIMPLEX, 0.45, Scalar(0, 165, 255), 1.5);
         } else if (brightness > 220.0) {
-            putText(frame, "[!] ASIRI ISIK / PARLAMA UYARISI", Point(x1, y1 + h + 20), FONT_HERSHEY_SIMPLEX, 0.45, Scalar(0, 165, 255), 1.5);
+            putText(frame, "[!] EXCESSIVE LIGHT / GLARE WARNING", Point(x1, y1 + h + 20), FONT_HERSHEY_SIMPLEX, 0.45, Scalar(0, 165, 255), 1.5);
         }
 
         // 5 Landmarks (Right Eye, Left Eye, Nose, Right Mouth Corner, Left Mouth Corner)
@@ -832,31 +832,31 @@ int main(int argc, char** argv) {
                 if (has_registered_face) {
                     double score_straight = recognizer->match(straight_feat, face_feature, FaceRecognizerSF::DisType::FR_COSINE);
                     double max_score = score_straight;
-                    string angle_str = "DUZ";
+                    string angle_str = "STRAIGHT";
 
                     if (is_multi_angle) {
                         double score_left = recognizer->match(left_feat, face_feature, FaceRecognizerSF::DisType::FR_COSINE);
                         double score_right = recognizer->match(right_feat, face_feature, FaceRecognizerSF::DisType::FR_COSINE);
                         if (score_left > max_score) {
                             max_score = score_left;
-                            angle_str = "SOL";
+                            angle_str = "LEFT";
                         }
                         if (score_right > max_score) {
                             max_score = score_right;
-                            angle_str = "SAG";
+                            angle_str = "RIGHT";
                         }
                     }
 
                     is_match = (max_score > config.matching_threshold);
 
-                    string match_status = is_match ? "KIMLIK ONAYLANDI (MATCH)" : "BILINMEYEN KISI (NO MATCH)";
+                    string match_status = is_match ? "IDENTITY VERIFIED (MATCH)" : "UNKNOWN PERSON (NO MATCH)";
                     Scalar text_color = is_match ? Scalar(0, 255, 0) : Scalar(0, 165, 255);
 
                     putText(frame, match_status, Point(10, 30), FONT_HERSHEY_SIMPLEX, 0.7, text_color, 2);
-                    string scores = format("Score: %.3f (%s) | Esik: %.2f", max_score, angle_str.c_str(), config.matching_threshold);
+                    string scores = format("Score: %.3f (%s) | Threshold: %.2f", max_score, angle_str.c_str(), config.matching_threshold);
                     putText(frame, scores, Point(10, 55), FONT_HERSHEY_SIMPLEX, 0.5, text_color, 1);
                 } else {
-                    putText(frame, "KAYITLI YUZ YOK. Kaydetmek icin 's' tusuna basin.", Point(10, 30), FONT_HERSHEY_SIMPLEX, 0.55, Scalar(0, 165, 255), 1.5);
+                    putText(frame, "NO ENROLLED FACE. Press 's' to enroll.", Point(10, 30), FONT_HERSHEY_SIMPLEX, 0.55, Scalar(0, 165, 255), 1.5);
                 }
             } else {
                 // If spoof face is shown: BLOCK AUTHENTICATION & Show bold alert
@@ -865,30 +865,30 @@ int main(int argc, char** argv) {
                     Scalar banner_color;
                     if (active_state == Liveness_WaitStraight) {
                         if (avg_brightness < config.min_brightness) {
-                            challenge_str = format("[1/2] KAMERAYA DUZ BAKIN (Karanlik Mod) (Duz: %d/3)", straight_frames);
+                            challenge_str = format("[1/2] LOOK STRAIGHT AT THE CAMERA (Dark Mode) (Straight: %d/3)", straight_frames);
                         } else {
-                            challenge_str = format("[1/3] KAMERAYA DUZ BAKIN (Duz: %d/3)", straight_frames);
+                            challenge_str = format("[1/3] LOOK STRAIGHT AT THE CAMERA (Straight: %d/3)", straight_frames);
                         }
                         banner_color = Scalar(0, 165, 255); // Orange
                     } else if (active_state == Liveness_WaitBlink) {
-                        challenge_str = "[2/3] LUTFEN GOZUNUZU KIRPIN";
+                        challenge_str = "[2/3] PLEASE BLINK YOUR EYES";
                         banner_color = Scalar(255, 0, 255); // Pink/Purple
                     } else if (active_state == Liveness_WaitTurn) {
                         if (avg_brightness < config.min_brightness) {
-                            challenge_str = "[2/2] KAFANIZI SAGA VEYA SOLA CEVIRIN (Karanlik Mod)";
+                            challenge_str = "[2/2] TURN YOUR HEAD LEFT OR RIGHT (Dark Mode)";
                         } else {
-                            challenge_str = "[3/3] KAFANIZI SAGA VEYA SOLA CEVIRIN";
+                            challenge_str = "[3/3] TURN YOUR HEAD LEFT OR RIGHT";
                         }
                         banner_color = Scalar(0, 255, 255); // Cyan
                     } else {
-                        challenge_str = "AKTIF CANLILIK BEKLENIYOR";
+                        challenge_str = "ACTIVE LIVENESS PENDING";
                         banner_color = Scalar(0, 0, 255);
                     }
                     putText(frame, challenge_str, Point(10, 30), FONT_HERSHEY_SIMPLEX, 0.65, banner_color, 2);
                 } else {
-                    string spoof_str = "SPOOF: " + (liveness_reason.empty() ? "FOTOGRAF/EKRAN!" : liveness_reason);
+                    string spoof_str = "SPOOF: " + (liveness_reason.empty() ? "PHOTO/SCREEN!" : liveness_reason);
                     putText(frame, spoof_str, Point(10, 30), FONT_HERSHEY_SIMPLEX, 0.65, Scalar(0, 0, 255), 2);
-                    putText(frame, "KIMLIK DOGRULAMA REDDEDILDI (SPOOF)", Point(10, 55), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 255), 1.5);
+                    putText(frame, "AUTHENTICATION DENIED (SPOOF)", Point(10, 55), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 255), 1.5);
                 }
                 
                 if (key == 's') {
@@ -899,18 +899,18 @@ int main(int argc, char** argv) {
 
                     if (reg_wizard == Reg_None) {
                         reg_wizard = Reg_StepStraight;
-                        cout << "[SETUP WIZARD] Sihirbaz baslatildi. Adim 1: Karsiya bakip 's' tusuna basin." << endl;
+                        cout << "[SETUP WIZARD] Wizard started. Step 1: Look straight and press 's'." << endl;
                     } else if (reg_wizard == Reg_StepStraight) {
                         wizard_straight = face_feature.clone();
                         // Run calibration on the straight face frame
                         optimal_crop_factor = calibrateOptimalCropFactor(frame, bbox, liveness_net);
                         optimal_threshold = 1.5;
                         reg_wizard = Reg_StepLeft;
-                        cout << "[SETUP WIZARD] Adim 1 Kaydedildi! Önerilen optimal katsayi: " << optimal_crop_factor << "x. Adim 2: Kafanizi SOLA cevirip 's' tusuna basin." << endl;
+                        cout << "[SETUP WIZARD] Step 1 Saved! Recommended optimal crop factor: " << optimal_crop_factor << "x. Step 2: Turn your head LEFT and press 's'." << endl;
                     } else if (reg_wizard == Reg_StepLeft) {
                         wizard_left = face_feature.clone();
                         reg_wizard = Reg_StepRight;
-                        cout << "[SETUP WIZARD] Adim 2 Kaydedildi! Adim 3: Kafanizi SAGA cevirip 's' tusuna basin." << endl;
+                        cout << "[SETUP WIZARD] Step 2 Saved! Step 3: Turn your head RIGHT and press 's'." << endl;
                     } else if (reg_wizard == Reg_StepRight) {
                         wizard_right = face_feature.clone();
                         saveFaceFeatures(wizard_straight, wizard_left, wizard_right, optimal_crop_factor, optimal_threshold, feature_file);
@@ -920,7 +920,7 @@ int main(int argc, char** argv) {
                         is_multi_angle = true;
                         has_registered_face = true;
                         reg_wizard = Reg_Done;
-                        cout << "[SETUP WIZARD] Kurulum tamamlandi ve dosyaya yazildi (" << feature_file << ")" << endl;
+                        cout << "[SETUP WIZARD] Enrollment completed and written to file (" << feature_file << ")" << endl;
                     }
                 }
             }
@@ -930,23 +930,23 @@ int main(int argc, char** argv) {
                 string wizard_str = "";
                 Scalar wizard_color;
                 if (reg_wizard == Reg_StepStraight) {
-                    wizard_str = "[YUZ KAYDI 1/3] DUZ BAKIN VE 's' BASIN";
+                    wizard_str = "[FACE ENROLL 1/3] LOOK STRAIGHT AND PRESS 's'";
                     wizard_color = Scalar(0, 165, 255);
                 } else if (reg_wizard == Reg_StepLeft) {
-                    wizard_str = "[YUZ KAYDI 2/3] SOLA BAKIN VE 's' BASIN";
+                    wizard_str = "[FACE ENROLL 2/3] LOOK LEFT AND PRESS 's'";
                     wizard_color = Scalar(255, 0, 255);
                 } else if (reg_wizard == Reg_StepRight) {
-                    wizard_str = "[YUZ KAYDI 3/3] SAGA BAKIN VE 's' BASIN";
+                    wizard_str = "[FACE ENROLL 3/3] LOOK RIGHT AND PRESS 's'";
                     wizard_color = Scalar(255, 255, 0);
                 } else if (reg_wizard == Reg_Done) {
-                    wizard_str = "[YUZ KAYDI] BASARIYLA TAMAMLANDI!";
+                    wizard_str = "[FACE ENROLL] ENROLLMENT SUCCESSFUL!";
                     wizard_color = Scalar(0, 255, 0);
                 }
 
                 // Draw overlay rectangle
                 rectangle(frame, Point(0, 0), Point(frame.cols, 70), Scalar(0, 0, 0), -1);
                 putText(frame, wizard_str, Point(15, 35), FONT_HERSHEY_SIMPLEX, 0.65, wizard_color, 2);
-                putText(frame, "Sifirlamak veya yeniden baslatmak icin 'r' veya 'q' basin.", Point(15, 58), FONT_HERSHEY_SIMPLEX, 0.42, Scalar(200, 200, 200), 1);
+                putText(frame, "Press 'r' to reset or 'q' to exit.", Point(15, 58), FONT_HERSHEY_SIMPLEX, 0.42, Scalar(200, 200, 200), 1);
             }
 
             // Draw upscaled face box with colors matching matching/spoofing states
@@ -960,18 +960,18 @@ int main(int argc, char** argv) {
             
             string metric_stats = "";
             if (config.liveness_method == "texture") {
-                metric_stats = format("Lap Varyans: %.1f | HSV Sat: %.1f", laplacian_var_gui, hsv_sat_gui);
+                metric_stats = format("Lap Variance: %.1f | HSV Sat: %.1f", laplacian_var_gui, hsv_sat_gui);
             } else if (config.liveness_method == "active") {
-                metric_stats = format("Yaw: %.3f | Goz Var (Sol/Sag): %.1f / %.1f (Esik: <16.0)", 
+                metric_stats = format("Yaw: %.3f | Eye Var (Left/Right): %.1f / %.1f (Threshold: <16.0)", 
                                        yaw_ratio_gui, l_eye_var_gui, r_eye_var_gui);
             } else {
-                metric_stats = "MiniFASNet Yapay Zeka Modu Aktif";
+                metric_stats = "MiniFASNet AI Liveness Active";
             }
             
             if (config.enable_adaptive_exposure) {
-                metric_stats += " | CLAHE: AKTIF";
+                metric_stats += " | CLAHE: ON";
             } else {
-                metric_stats += " | CLAHE: KAPALI";
+                metric_stats += " | CLAHE: OFF";
             }
             putText(frame, metric_stats, Point(10, frame.rows - 10), FONT_HERSHEY_SIMPLEX, 0.4, Scalar(0, 255, 255), 1);
 
@@ -985,13 +985,13 @@ int main(int argc, char** argv) {
                 blink_phase = Blink_PhaseOpen;
             }
             
-            putText(frame, "YUZ TESPIT EDILEMEDI", Point(10, 30), FONT_HERSHEY_SIMPLEX, 0.6, Scalar(0, 0, 255), 1.5);
+            putText(frame, "NO FACE DETECTED", Point(10, 30), FONT_HERSHEY_SIMPLEX, 0.6, Scalar(0, 0, 255), 1.5);
             
             // handled at top of loop
         }
 
         // Show window
-        imshow("FaceAuth NextGen - Live Test", frame);
+        imshow("AegisFace - Live Setup & Test Wizard", frame);
     }
 
     cap.release();

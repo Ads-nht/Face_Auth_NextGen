@@ -382,7 +382,7 @@ int main(int argc, char** argv) {
     FaceAuthConfig config = readFaceAuthConfig();
 
     cout << "==================================================================" << endl;
-    cout << "   FaceAuth NextGen - Canli Test Prototipi + Liveness v3.1       " << endl;
+    cout << "   AegisFace - Live Setup & Test Wizard v3.1                      " << endl;
     cout << "==================================================================" << endl;
     cout << "[INFO] Hedef Kullanici: " << clean_username << endl;
     cout << "[INFO] Model Dosyasi: " << feature_file << endl;

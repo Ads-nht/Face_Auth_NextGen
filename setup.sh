@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==============================================================================
-# FaceAuth NextGen - Güvenli Kurulum ve Entegrasyon Betiği (v2.1)
+# AegisFace - Güvenli Kurulum ve Entegrasyon Betiği (v2.1)
 # ==============================================================================
 
 # Renk Tanımlamaları
@@ -12,7 +12,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # Color Reset
 
 echo -e "${BLUE}==================================================================${NC}"
-echo -e "${BLUE}    FaceAuth NextGen - Güvenli Kurulum Betiği (v2.1 Elite Security)${NC}"
+echo -e "${BLUE}    AegisFace - Güvenli Kurulum Betiği (v2.1)${NC}"
 echo -e "${BLUE}==================================================================${NC}"
 
 # 1. Root Yetkisi Kontrolü
@@ -177,7 +177,7 @@ echo -e "${BLUE}[7/9] Systemd servis dosyası kuruluyor...${NC}"
 
 cat <<EOF > /etc/systemd/system/faceauth.service
 [Unit]
-Description=FaceAuth NextGen - C++ Arkaplan Yuz Tanima Servisi
+Description=AegisFace - C++ Arkaplan Yuz Tanima Servisi
 After=multi-user.target
 
 [Service]

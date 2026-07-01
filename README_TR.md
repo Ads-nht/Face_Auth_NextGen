@@ -1,5 +1,5 @@
-# 🛡️ AegisFace (FaceAuth NextGen)
-### Linux İçin Yeni Nesil, Ultra Hızlı (<10ms) Yüz Tanıma PAM Modülü
+# 🛡️ AegisFace
+### Linux İçin Yüksek Performanslı, Ultra Hızlı (<10ms) Yüz Tanıma PAM Modülü
 
 [English](README.md) | [Türkçe](README_TR.md)
 

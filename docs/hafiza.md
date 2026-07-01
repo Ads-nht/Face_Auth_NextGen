@@ -1,4 +1,4 @@
-# FaceAuth NextGen - Teknik Hafıza (v3.1 Elite Edition)
+# AegisFace - Teknik Hafıza (v3.1)
 
 ## 📌 Proje Özeti
 - **Amaç:** Python tabanlı "Howdy" kimlik doğrulama sisteminin yerine geçecek; C++ ve modern ONNX yapay zeka modelleriyle çalışan, SDDM ve Hyprlock uyumlu yüksek performanslı PAM modülü prototipi.
@@ -33,7 +33,7 @@
 - **Yeni Özellik:** Kullanıcı yüzünü kaydederken (Enrollment), sistem kameranın gürültü ve ışık koşullarına göre anlık bir katsayı süpürmesi (1.2x - 2.0x) gerçekleştirir. Kullanıcı için en kararlı liveness sonucunu veren optimal crop katsayısını ve eşiği belirler.
 - **Kayıt ve Kullanım:** Belirlenen optimal katsayı ve eşik değeri doğrudan kullanıcının `.yml` profiline kaydedilir. Daemon, kimlik doğrulama sırasında bu özel değerleri okur. Böylece kullanıcı kafasını milim hareket ettirmeden (tıpkı cep telefonlarındaki FaceID gibi) anında kilit açabilir.
 
-### 8. Rijit Hizalama ve Fizyolojik Üst Sınırlı Mikro-Hareket Liveness (v3.3 Elite Security)
+### 8. Rijit Hizalama ve Fizyolojik Üst Sınırlı Mikro-Hareket Liveness (v3.3)
 - **Rijit Hizalama (Translation/Rotation Invariance):** Nirengi noktaları burun ucu merkezli `(0,0)` koordinat sistemine ötelenerek, gözler arası mesafe ve açı referans alınarak ölçek ve dönmeden tamamen bağımsız hale getirilmiştir. Bu sayede telefon ekranı/kağıt gibi rijit 2D objeler hareket ettirilse dahi bağıl koordinat varyansı matematiksel olarak **tam sıfıra** indirgenir ve spoof bypassları imkansız kılınır.
 - **Fizyolojik Üst ve Alt Sınır Kontrolü:** Varyans alt sınırı sensör gürültüsünü filtrelemek için `1.5e-5` olarak, üst sınırı ise telefonu deli gibi hızlı sallayarak yapılan sarsıntı bypasslarını önlemek için `8.0e-4` olarak belirlenmiştir. Bu sayede normal oturuştaki bir insanın fizyolojik titreşimleri milisaniyeler içinde doğrulanırken, statik gürültüler ve çılgın sarsıntı atakları tamamen bloke edilir!
 

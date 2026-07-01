@@ -1,5 +1,5 @@
-# 🛡️ AegisFace (FaceAuth NextGen)
-### Next-Gen, Ultra-Fast (<10ms) Face Authentication PAM Module for Linux
+# 🛡️ AegisFace
+### High-Performance, Ultra-Fast (<10ms) Face Authentication PAM Module for Linux
 
 [English](README.md) | [Türkçe](README_TR.md)
 
